@@ -2,7 +2,7 @@
 WhatsApp Message Sender MVP
 A streamlined Flask application for sending WhatsApp messages with image, text and link.
 """
-from flask import Flask, request, render_template, jsonify, send_from_directory
+from flask import Flask, request, render_template, jsonify, send_from_directory, session, redirect, url_for
 from werkzeug.utils import secure_filename
 import os
 import json
@@ -19,6 +19,7 @@ import time
 import threading
 from datetime import datetime
 import tempfile
+
 
 # Firebase imports
 import firebase_admin
@@ -308,6 +309,55 @@ def run_periodic_backups():
 # Start backup thread
 backup_thread = threading.Thread(target=run_periodic_backups, daemon=True)
 backup_thread.start()
+
+# ------------------------------------------------------------------------------
+# login Functions
+# ------------------------------------------------------------------------------
+
+
+# Set a session secret key
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'celinadorsecretkey')
+
+# Set your password
+PASSWORD = os.getenv('APP_PASSWORD', 'CelinaDorWedding2025!')
+
+# Simple gate middleware
+@app.before_request
+def check_auth():
+    # Skip auth check for static files, login route, and webhook endpoints
+    if (request.path.startswith('/static') or 
+        request.path == '/login' or 
+        request.path.startswith('/meta-webhook') or
+        request.path.startswith('/flow-webhook') or
+        'webhook' in request.path.lower()):
+        return None
+    
+    # Check if the user is authenticated
+    if not session.get('authenticated'):
+        return redirect('/login')
+    
+    return None
+
+# Login route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        if request.form.get('password') == PASSWORD:
+            session['authenticated'] = True
+            return redirect('/')
+        
+        # Password is incorrect
+        return render_template('login.html', error='Incorrect password')
+    
+    # GET request - show the login form
+    return render_template('login.html')
+
+# Logout route (optional)
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/login')
+
 
 # ------------------------------------------------------------------------------
 # Utility Functions
