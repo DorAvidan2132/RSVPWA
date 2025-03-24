@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect WhatsApp Business Account</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .status-card {
+            margin-top: 20px;
+            display: none;
+        }
+        .step-card {
+            margin-bottom: 15px;
+        }
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #0d6efd;
+            color: white;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <h1 class="mb-4">Connect Existing WhatsApp Business Account</h1>
+        
+        <!-- Alert area for messages -->
+        <div id="alert-area"></div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">WhatsApp Business Account Connection</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Connect your existing WhatsApp Business account to enable sending messages through this application.
+                            This will allow you to use both the WhatsApp Business app and this application with the same number.
+                        </p>
+                        
+                        <!-- Process explanation -->
+                        <div class="card step-card">
+                            <div class="card-body">
+                                <h5><span class="step-number">1</span> Start Connection Process</h5>
+                                <p>Click the "Connect WhatsApp Business Account" button below to start the process.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card step-card">
+                            <div class="card-body">
+                                <h5><span class="step-number">2</span> Enter Your WhatsApp Number</h5>
+                                <p>You'll be asked to enter your existing WhatsApp Business phone number.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card step-card">
+                            <div class="card-body">
+                                <h5><span class="step-number">3</span> Scan QR Code</h5>
+                                <p>You'll receive a message on your WhatsApp Business app with instructions to scan a QR code.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card step-card">
+                            <div class="card-body">
+                                <h5><span class="step-number">4</span> Confirm Connection</h5>
+                                <p>Confirm the connection in your WhatsApp Business app and choose whether to share your message history.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card step-card">
+                            <div class="card-body">
+                                <h5><span class="step-number">5</span> Wait for Synchronization</h5>
+                                <p>After connection, we'll synchronize your contacts and message history (if you chose to share it).</p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button id="connect-button" class="btn btn-primary btn-lg">
+                                Connect WhatsApp Business Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status card shown during/after onboarding -->
+                <div id="status-card" class="card status-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Connection Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="status-message">
+                            <p>Connecting your WhatsApp Business account...</p>
+                        </div>
+                        <div class="progress mb-3">
+                            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 25%"></div>
+                        </div>
+                        <div id="next-steps" style="display: none;">
+                            <hr>
+                            <h6>Next Steps:</h6>
+                            <p>Your WhatsApp Business account has been connected successfully! You can now:</p>
+                            <ul>
+                                <li><a href="/">Go to the message sender</a> to start sending messages.</li>
+                                <li>Keep your WhatsApp Business app open to facilitate synchronization.</li>
+                                <li>Note that synchronization may take several minutes to complete.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Important Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>What Will Change</h6>
+                        <ul>
+                            <li>You can use both this app and the WhatsApp Business app with the same number</li>
+                            <li>Messages sent from either will be visible in both places</li>
+                        </ul>
+                        
+                        <h6>Limitations</h6>
+                        <ul>
+                            <li>Broadcast lists will be disabled in WhatsApp Business app</li>
+                            <li>Group chats will remain accessible only in the WhatsApp Business app</li>
+                            <li>Disappearing messages will be turned off</li>
+                            <li>Live location sharing will be disabled</li>
+                        </ul>
+                        
+                        <h6>Requirements</h6>
+                        <ul>
+                            <li>WhatsApp Business app version 2.24.17 or higher</li>
+                            <li>A supported country (not EEA, EU, UK, Australia, India, Japan, Nigeria, Philippines, Russia, South Korea, South Africa, or Turkey)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Load Meta SDK -->
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Facebook SDK
+            window.fbAsyncInit = function() {
+                FB.init({
+                    appId: '{{ meta_app_id }}',
+                    cookie: true,
+                    xfbml: true,
+                    version: 'v18.0'
+                });
+            };
+            
+            // Connect button click handler
+            document.getElementById('connect-button').addEventListener('click', launchWhatsAppSignup);
+            
+            // Launch WhatsApp signup flow with WhatsApp Business app onboarding
+            function launchWhatsAppSignup() {
+                // Show status card
+                document.getElementById('status-card').style.display = 'block';
+                document.getElementById('status-message').innerHTML = '<p>Launching WhatsApp connection flow...</p>';
+                
+                // Start the onboarding flow
+                FB.login(fbLoginCallback, {
+                    config_id: '{{ meta_config_id }}',
+                    response_type: 'code',
+                    override_default_response_type: true,
+                    extras: {
+                        setup: {},
+                        featureType: 'whatsapp_business_app_onboarding',
+                        sessionInfoVersion: '3'
+                    }
+                });
+            }
+            
+            // Handle login callback
+            function fbLoginCallback(response) {
+                if (response.status === 'connected') {
+                    // User is logged in and has authorized the app
+                    console.log('User logged in and authorized the app.');
+                } else {
+                    // User cancelled or didn't complete login
+                    console.log('User cancelled or did not complete login.');
+                    document.getElementById('status-message').innerHTML = '<p class="text-danger">Connection process was cancelled or failed. Please try again.</p>';
+                    document.getElementById('progress-bar').style.width = '0%';
+                }
+            }
+            
+            // Listen for embedded signup messages from the iframe
+            window.addEventListener('message', function(event) {
+                try {
+                    const data = event.data;
+                    
+                    // Check if this is a WhatsApp Embedded Signup message
+                    if (data && data.type === 'WA_EMBEDDED_SIGNUP') {
+                        console.log('Received WhatsApp Embedded Signup message:', data);
+                        
+                        // Handle different events
+                        if (data.event === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING') {
+                            // WhatsApp Business App onboarding completed
+                            handleOnboardingComplete(data);
+                        } else if (data.event === 'CLOSE') {
+                            // User closed the flow
+                            document.getElementById('status-message').innerHTML = '<p class="text-warning">Connection process was closed. Please try again if you want to connect your account.</p>';
+                            document.getElementById('progress-bar').style.width = '0%';
+                        } else if (data.event === 'ERROR') {
+                            // Error occurred
+                            document.getElementById('status-message').innerHTML = `<p class="text-danger">Error: ${data.data?.error_message || 'Unknown error occurred'}</p>`;
+                            document.getElementById('progress-bar').style.width = '0%';
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error processing message event:', e);
+                }
+            });
+            
+            // Handle successful onboarding completion
+            function handleOnboardingComplete(data) {
+                // Update UI to show success
+                document.getElementById('status-message').innerHTML = '<p class="text-success">WhatsApp Business account connected successfully!</p><p>Now synchronizing your contacts and message history...</p>';
+                document.getElementById('progress-bar').style.width = '75%';
+                
+                // Send the data to our backend
+                fetch('/onboard-callback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Onboarding callback result:', result);
+                    
+                    if (result.success) {
+                        // Complete the process
+                        document.getElementById('status-message').innerHTML = '<p class="text-success">WhatsApp Business account connected and synchronization started!</p>';
+                        document.getElementById('progress-bar').style.width = '100%';
+                        document.getElementById('next-steps').style.display = 'block';
+                        
+                        // Show success alert
+                        showAlert('WhatsApp Business account connected successfully! Synchronization is in progress.', 'success');
+                    } else {
+                        // Show error
+                        document.getElementById('status-message').innerHTML = `<p class="text-warning">Account connected, but there was an issue with synchronization: ${result.message}</p>`;
+                        document.getElementById('progress-bar').style.width = '90%';
+                        document.getElementById('next-steps').style.display = 'block';
+                        
+                        // Show warning alert
+                        showAlert('WhatsApp account connected, but there was an issue with synchronization. You may need to try again.', 'warning');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error calling onboarding callback:', error);
+                    document.getElementById('status-message').innerHTML = '<p class="text-warning">Account connected, but there was an error completing the process. Please contact support.</p>';
+                    document.getElementById('progress-bar').style.width = '90%';
+                    showAlert('Error completing the onboarding process. Please contact support.', 'danger');
+                });
+            }
+            
+            // Show alert message
+            function showAlert(message, type) {
+                const alertArea = document.getElementById('alert-area');
+                const alert = document.createElement('div');
+                
+                alert.className = `alert alert-${type} alert-dismissible fade show`;
+                alert.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                
+                alertArea.appendChild(alert);
+                
+                // Auto-dismiss after 8 seconds
+                setTimeout(() => {
+                    alert.classList.remove('show');
+                    setTimeout(() => alert.remove(), 500);
+                }, 8000);
+            }
+        });
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

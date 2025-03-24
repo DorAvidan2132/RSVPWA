@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Message Tester</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-4">
+        <h1>WhatsApp Template Message Tester</h1>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Send Template Message</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="template-form">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">WhatsApp Number</label>
+                                <input type="tel" class="form-control" id="phone" placeholder="+1234567890" required>
+                                <div class="form-text">Enter the full phone number with country code</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="template" class="form-label">Template Name</label>
+                                <input type="text" class="form-control" id="template" value="auto_reply_webhook" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="language" class="form-label">Language Code</label>
+                                <input type="text" class="form-control" id="language" value="en" required>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Send Template Message</button>
+                        </form>
+                        
+                        <div id="result" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Test Webhook Auto-Reply</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="webhook-form">
+                            <div class="mb-3">
+                                <label for="webhook-phone" class="form-label">Test Phone Number</label>
+                                <input type="tel" class="form-control" id="webhook-phone" placeholder="+1234567890" required>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Simulate Incoming Message</button>
+                        </form>
+                        
+                        <div id="webhook-result" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Response Log</h5>
+            </div>
+            <div class="card-body">
+                <pre id="response-log" style="height: 300px; overflow-y: auto; background-color: #f8f9fa; padding: 1rem;"></pre>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Helper to add log entries
+            function addLog(message) {
+                const log = document.getElementById('response-log');
+                const timestamp = new Date().toLocaleTimeString();
+                const entry = `[${timestamp}] ${message}\n`;
+                log.textContent = entry + log.textContent;
+            }
+            
+            // Template message form
+            document.getElementById('template-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const phone = document.getElementById('phone').value.trim();
+                const template = document.getElementById('template').value.trim();
+                const language = document.getElementById('language').value.trim();
+                
+                if (!phone) {
+                    document.getElementById('result').innerHTML = '<div class="alert alert-danger">Please enter a phone number</div>';
+                    return;
+                }
+                
+                addLog(`Sending template "${template}" to ${phone}...`);
+                
+                // Send the request
+                fetch('/send-template', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phone: phone,
+                        template: template,
+                        language: language
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('result').innerHTML = '<div class="alert alert-success">Template message sent successfully!</div>';
+                        addLog(`✅ Success: ${data.message}`);
+                    } else {
+                        document.getElementById('result').innerHTML = `<div class="alert alert-danger">Error: ${data.message}</div>`;
+                        addLog(`❌ Error: ${data.message}`);
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('result').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                    addLog(`❌ Error: ${error.message}`);
+                });
+            });
+            
+            // Webhook test form
+            document.getElementById('webhook-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const phone = document.getElementById('webhook-phone').value.trim();
+                
+                if (!phone) {
+                    document.getElementById('webhook-result').innerHTML = '<div class="alert alert-danger">Please enter a phone number</div>';
+                    return;
+                }
+                
+                addLog(`Simulating webhook with phone ${phone}...`);
+                
+                // Send the request
+                fetch(`/test-webhook?phone=${encodeURIComponent(phone)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('webhook-result').innerHTML = '<div class="alert alert-success">Webhook simulation successful!</div>';
+                        addLog(`✅ Webhook processed: ${data.message}`);
+                    } else {
+                        document.getElementById('webhook-result').innerHTML = `<div class="alert alert-danger">Error: ${data.message}</div>`;
+                        addLog(`❌ Webhook error: ${data.message}`);
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('webhook-result').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                    addLog(`❌ Error: ${error.message}`);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

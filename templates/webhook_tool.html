@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Webhook Test Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .phone-number {
+            font-weight: bold;
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <h1 class="mb-4">WhatsApp Webhook Test Tool</h1>
+        
+        <div class="mb-3">
+            <a href="/" class="btn btn-primary">Back to Home</a>
+            <a href="/list-templates" class="btn btn-info ms-2">List Templates</a>
+            <a href="/check-whatsapp-status" class="btn btn-success ms-2">Check Status</a>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Manual Testing</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="test-phone" class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="test-phone" placeholder="e.g., 972551234567">
+                        </div>
+                        <div class="mb-3">
+                            <label for="test-message" class="form-label">Message</label>
+                            <input type="text" class="form-control" id="test-message" placeholder="Test message">
+                        </div>
+                        <button class="btn btn-primary" id="send-test-btn">Send Test Message</button>
+                        
+                        <div class="mt-3" id="test-result"></div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>WhatsApp Phone Number ID:</strong> {{ meta_phone_number_id }}</p>
+                        <p><strong>Webhook URL:</strong> /meta-webhook</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Last Webhook Data</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if last_webhook %}
+                            <pre>{{ last_webhook | tojson(indent=2) }}</pre>
+                        {% else %}
+                            <p class="text-muted">No webhook data found</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Webhook Logs</h5>
+            </div>
+            <div class="card-body">
+                {% if webhook_logs %}
+                    <div class="accordion" id="webhookAccordion">
+                        {% for log in webhook_logs %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}">
+                                        {{ log.timestamp }} - {{ log.filename }}
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#webhookAccordion">
+                                    <div class="accordion-body">
+                                        <pre>{{ log.data | tojson(indent=2) }}</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No webhook logs found</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sendTestBtn = document.getElementById('send-test-btn');
+            const testResult = document.getElementById('test-result');
+            
+            sendTestBtn.addEventListener('click', function() {
+                const phone = document.getElementById('test-phone').value.trim();
+                const message = document.getElementById('test-message').value.trim() || 'Test message';
+                
+                if (!phone) {
+                    testResult.innerHTML = '<div class="alert alert-danger">Please enter a phone number</div>';
+                    return;
+                }
+                
+                testResult.innerHTML = '<div class="alert alert-info">Sending message...</div>';
+                
+                fetch(`/test-send?phone=${encodeURIComponent(phone)}&message=${encodeURIComponent(message)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            testResult.innerHTML = `<div class="alert alert-success">Message sent successfully!</div>`;
+                        } else {
+                            testResult.innerHTML = `<div class="alert alert-danger">Error: ${data.message}</div>`;
+                        }
+                    })
+                    .catch(error => {
+                        testResult.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                    });
+            });
+            
+            // Highlight phone numbers in JSON
+            document.querySelectorAll('pre').forEach(pre => {
+                const html = pre.innerHTML;
+                const regex = /"(from|wa_id|phone|whatsapp_id)":\s*"([+\d\s]+)"/g;
+                pre.innerHTML = html.replace(regex, '"$1": "<span class="phone-number">$2</span>"');
+            });
+        });
+    </script>
+</body>
+</html>

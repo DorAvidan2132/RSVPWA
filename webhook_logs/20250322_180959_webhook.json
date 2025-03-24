@@ -1,0 +1,20 @@
+{
+  "entry": [
+    {
+      "id": "539741765897929",
+      "time": 1742659798,
+      "changes": [
+        {
+          "value": {
+            "display_phone_number": "972552516825",
+            "decision": "REJECTED",
+            "requested_verified_name": "Wedding",
+            "rejection_reason": "BIZ_COMMERCE_VIOLATION_OTHER"
+          },
+          "field": "phone_number_name_update"
+        }
+      ]
+    }
+  ],
+  "object": "whatsapp_business_account"
+}

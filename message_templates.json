@@ -1,0 +1,52 @@
+{
+  "invite": {
+    "text": "Hello {name}, you're invited to our event!",
+    "image_url": "",
+    "quick_replies": ["I'll be there! 🎉", "Unfortunately not 😔"]
+  },
+  "guest_count": {
+    "text": "How many guests will be attending (including yourself)?",
+    "image_url": "",
+    "quick_replies": ["Just me", "2 people", "3 people", "4 people"]
+  },
+  "allergies": {
+    "text": "Do you or your guests have any allergies we should know about?",
+    "image_url": "",
+    "quick_replies": ["No allergies", "Yes - I'll specify"]
+  },
+  "shuttle": {
+    "text": "Would you be interested in shuttle service?",
+    "image_url": "",
+    "quick_replies": ["Yes, please! 🚌", "No, thanks"]
+  },
+  "thank_you_attending": {
+    "text": "Thank you for confirming! We're excited to see you! We'll send more details soon.",
+    "image_url": "",
+    "quick_replies": []
+  },
+  "thank_you_declined": {
+    "text": "Thank you for letting us know. We'll miss you!",
+    "image_url": "",
+    "quick_replies": []
+  },
+  "thank_you_attended": {
+    "text": "Dear {name}, thank you for being part of our special day! We truly enjoyed celebrating with you! 💝",
+    "image_url": "",
+    "quick_replies": []
+  },
+  "reminder": {
+    "text": "Hello {name}, we noticed you haven't responded to our invitation yet. We'd love to know if you can make it!",
+    "image_url": "",
+    "quick_replies": ["I'll be there! 🎉", "Unfortunately not 😔"]
+  },
+  "transport_choice": {
+    "text": "Hello {name}, please confirm your transportation choice:",
+    "image_url": "",
+    "quick_replies": ["I'll come on my own", "I'll take the shuttle"]
+  },
+  "location_details": {
+    "text": "Perfect! Here are the details:\n{location_or_shuttle_info}",
+    "image_url": "",
+    "quick_replies": []
+  }
+}

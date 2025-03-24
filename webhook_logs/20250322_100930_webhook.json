@@ -1,0 +1,19 @@
+{
+  "entry": [
+    {
+      "id": "0",
+      "time": 1742630970,
+      "changes": [
+        {
+          "field": "flows",
+          "value": {
+            "event": "FLOW_STATUS_CHANGE",
+            "message": "Flow {FlowName} changed status from DRAFT to PUBLISHED",
+            "flow_id": "1000"
+          }
+        }
+      ]
+    }
+  ],
+  "object": "whatsapp_business_account"
+}

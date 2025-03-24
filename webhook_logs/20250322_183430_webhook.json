@@ -1,0 +1,39 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "539741765897929",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "972552516825",
+              "phone_number_id": "589348557596989"
+            },
+            "contacts": [
+              {
+                "profile": {
+                  "name": "Dor"
+                },
+                "wa_id": "972524796969"
+              }
+            ],
+            "messages": [
+              {
+                "from": "972524796969",
+                "id": "wamid.HBgMOTcyNTI0Nzk2OTY5FQIAEhgUM0EwOUZCMzYxRjc4N0ZGMUExMDkA",
+                "timestamp": "1742660854",
+                "text": {
+                  "body": "Test"
+                },
+                "type": "text"
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}

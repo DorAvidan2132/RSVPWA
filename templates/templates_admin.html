@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Templates Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        pre {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .template-card {
+            transition: all 0.2s;
+        }
+        .template-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        fieldset {
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        legend {
+            width: auto;
+            padding: 0 0.5rem;
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            float: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">WhatsApp Templates Admin</h1>
+            <div>
+                <button id="sync-button" class="btn btn-primary me-2">
+                    <i class="bi bi-arrow-repeat"></i> Sync Templates
+                </button>
+                <a href="/" class="btn btn-outline-secondary">
+                    <i class="bi bi-house"></i> Back to Home
+                </a>
+            </div>
+        </div>
+        
+        <!-- Alert area for messages -->
+        <div id="alert-area"></div>
+        
+        <!-- Templates info card -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Templates Information</h5>
+                <span id="templates-count" class="badge bg-primary">0 templates</span>
+            </div>
+            <div class="card-body">
+                <div id="templates-loading" class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading templates...</p>
+                </div>
+                
+                <div id="templates-error" class="alert alert-danger d-none" role="alert">
+                    <h5>Error Loading Templates</h5>
+                    <p id="error-message">Unknown error occurred.</p>
+                    <button class="btn btn-sm btn-outline-danger" id="retry-button">
+                        <i class="bi bi-arrow-clockwise"></i> Retry
+                    </button>
+                </div>
+                
+                <div id="templates-info" class="d-none">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text">WABA ID</span>
+                                <input type="text" class="form-control" id="waba-id" readonly>
+                                <button class="btn btn-outline-secondary" type="button" id="copy-waba-id">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="search-templates" placeholder="Search templates...">
+                                <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <ul class="nav nav-tabs mb-3" id="templates-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="grid-tab" data-bs-toggle="tab" data-bs-target="#grid-view" type="button" role="tab">
+                                <i class="bi bi-grid-3x3-gap"></i> Grid View
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="table-tab" data-bs-toggle="tab" data-bs-target="#table-view" type="button" role="tab">
+                                <i class="bi bi-table"></i> Table View
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="json-tab" data-bs-toggle="tab" data-bs-target="#json-view" type="button" role="tab">
+                                <i class="bi bi-code-slash"></i> JSON View
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="templates-content">
+                        <!-- Grid View -->
+                        <div class="tab-pane fade show active" id="grid-view" role="tabpanel">
+                            <div id="templates-grid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                                <!-- Templates cards will be inserted here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Table View -->
+                        <div class="tab-pane fade" id="table-view" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Category</th>
+                                            <th>Status</th>
+                                            <th>Language</th>
+                                            <th>Components</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="templates-table">
+                                        <!-- Templates rows will be inserted here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- JSON View -->
+                        <div class="tab-pane fade" id="json-view" role="tabpanel">
+                            <div class="d-flex justify-content-end mb-2">
+                                <button class="btn btn-sm btn-outline-secondary" id="copy-json">
+                                    <i class="bi bi-clipboard"></i> Copy JSON
+                                </button>
+                            </div>
+                            <pre id="json-content">// Loading templates data...</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Template Test Modal -->
+        <div class="modal fade" id="testTemplateModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Test Template: <span id="modal-template-name"></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="test-template-form">
+                            <input type="hidden" id="test-template-name">
+                            <input type="hidden" id="test-template-language">
+                            
+                            <div class="mb-3">
+                                <label for="test-phone" class="form-label">Phone Number</label>
+                                <input type="text" class="form-control" id="test-phone" placeholder="+1234567890" required>
+                                <div class="form-text">Enter the recipient's phone number with country code</div>
+                            </div>
+                            
+                            <div id="test-template-components"></div>
+                            
+                            <div class="alert alert-info" id="test-template-info">
+                                <h6>Template Information</h6>
+                                <div id="test-template-details"></div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="send-test-button">Send Test</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Templates admin page loaded!");
+                // Fetch templates directly instead of from cache
+            fetch('/fetch-templates')
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Direct templates fetch result:", data);
+                    if (data.status === 'success') {
+                        templatesData = data.templates;
+                        renderTemplates(templatesData);
+                        showLoading(false);
+                        document.getElementById('templates-info').classList.remove('d-none');
+                    } else {
+                        console.error("Failed to fetch templates:", data.message);
+                        showError(true, data.message || 'Failed to fetch templates');
+                    }
+         
+                })
+                .catch(error => {
+                    console.error('Error fetching templates:', error);
+                    showError(true, 'Error connecting to server. Check console for details.');
+                });
+            // Load templates from cache on page load
+            loadTemplatesFromCache();
+            
+            // Set up event listeners
+            document.getElementById('sync-button').addEventListener('click', syncTemplates);
+            document.getElementById('retry-button').addEventListener('click', loadTemplatesFromCache);
+            document.getElementById('copy-waba-id').addEventListener('click', copyWabaId);
+            document.getElementById('copy-json').addEventListener('click', copyJsonData);
+            document.getElementById('search-templates').addEventListener('input', filterTemplates);
+            document.getElementById('clear-search').addEventListener('click', clearSearch);
+            document.getElementById('send-test-button').addEventListener('click', sendTestTemplate);
+        });
+        
+        // Store templates data
+        let templatesData = null;
+        
+        // Load templates from cache
+        function loadTemplatesFromCache() {
+            console.log("Attempting to load templates from cache...");
+            showLoading(true);
+            showError(false);
+            
+            fetch('/templates-cache')
+                .then(response => {
+                    console.log("Templates cache response:", response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Templates cache data:", data);
+                    if (data.status === 'success') {
+                        templatesData = data.templates;
+                        renderTemplates(templatesData);
+                        showLoading(false);
+                    } else {
+                        console.error("Failed to load templates from cache:", data.message);
+                        showError(true, data.message || 'Failed to load templates from cache');
+                        syncTemplates(); // Try syncing instead
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading templates from cache:', error);
+                    syncTemplates(); // Try syncing instead
+                });
+        }
+        
+        // Sync templates from API
+        function syncTemplates() {
+            showLoading(true);
+            showError(false);
+            
+            fetch('/templates-sync')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        templatesData = data.templates;
+                        renderTemplates(templatesData);
+                        showLoading(false);
+                        showAlert('Templates synchronized successfully!', 'success');
+                    } else {
+                        showError(true, data.message || 'Failed to sync templates');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError(true, 'Failed to connect to server. Please try again.');
+                });
+        }
+        
+        // Render templates data
+        function renderTemplates(data) {
+            console.log("Templates data:", data); // Add logging
+            
+            // Check if data is null or undefined
+            if (!data) {
+                showError(true, 'No data received from server');
+                return;
+            }
+            
+            // Make sure we have an array of templates
+            const templates = data.data || [];
+            
+            if (!Array.isArray(templates)) {
+                showError(true, 'Invalid templates data format');
+                return;
+            }
+            
+            document.getElementById('templates-count').textContent = `${templates.length} templates`;
+            
+            // Get WABA ID
+            const wabaIdInput = document.getElementById('waba-id');
+            wabaIdInput.value = data.waba_id || 'Unknown';
+            
+            // Render grid view
+            renderGridView(templates);
+            
+            // Render table view
+            renderTableView(templates);
+            
+            // Render JSON view
+            document.getElementById('json-content').textContent = JSON.stringify(templates, null, 2);
+            
+            // Show templates info
+            document.getElementById('templates-info').classList.remove('d-none');
+        }
+        
+        // Render grid view
+        function renderGridView(templates) {
+            const grid = document.getElementById('templates-grid');
+            grid.innerHTML = '';
+            
+            if (templates.length === 0) {
+                grid.innerHTML = '<div class="col-12"><div class="alert alert-info">No templates found</div></div>';
+                return;
+            }
+            
+            templates.forEach(template => {
+                const col = document.createElement('div');
+                col.className = 'col';
+                
+                const statusClass = getStatusClass(template.status);
+                const categoryClass = getCategoryClass(template.category);
+                
+                // Count components by type
+                const components = template.components || [];
+                const componentTypes = {};
+                components.forEach(comp => {
+                    const type = comp.type || 'UNKNOWN';
+                    componentTypes[type] = (componentTypes[type] || 0) + 1;
+                });
+                
+                // Build components badges
+                const componentBadges = Object.entries(componentTypes).map(([type, count]) => {
+                    return `<span class="badge bg-secondary me-1">${type}: ${count}</span>`;
+                }).join(' ');
+                
+                col.innerHTML = `
+                    <div class="card h-100 template-card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">${template.name}</h5>
+                            <span class="badge ${statusClass} status-badge">${template.status}</span>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">Category: <span class="badge ${categoryClass}">${template.category}</span></h6>
+                            <p class="card-text">Language: ${template.language}</p>
+                            <div class="mb-2">
+                                ${componentBadges}
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-sm btn-primary test-template-btn" data-template-index="${templates.indexOf(template)}">
+                                <i class="bi bi-send"></i> Test Template
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary view-template-btn" data-template-index="${templates.indexOf(template)}">
+                                <i class="bi bi-eye"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(col);
+            });
+            
+            // Attach event listeners
+            document.querySelectorAll('.test-template-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = this.dataset.templateIndex;
+                    openTestModal(templates[index]);
+                });
+            });
+            
+            document.querySelectorAll('.view-template-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = this.dataset.templateIndex;
+                    // Show template details in a modal or alert
+                    alert(JSON.stringify(templates[index], null, 2));
+                });
+            });
+        }
+        
+        // Render table view
+        function renderTableView(templates) {
+            const table = document.getElementById('templates-table');
+            table.innerHTML = '';
+            
+            if (templates.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="6" class="text-center">No templates found</td>';
+                table.appendChild(row);
+                return;
+            }
+            
+            templates.forEach(template => {
+                const row = document.createElement('tr');
+                
+                const statusClass = getStatusClass(template.status);
+                const categoryClass = getCategoryClass(template.category);
+                
+                // Count components by type
+                const components = template.components || [];
+                const componentTypes = {};
+                components.forEach(comp => {
+                    const type = comp.type || 'UNKNOWN';
+                    componentTypes[type] = (componentTypes[type] || 0) + 1;
+                });
+                
+                // Build components badges
+                const componentBadges = Object.entries(componentTypes).map(([type, count]) => {
+                    return `<span class="badge bg-secondary me-1">${type}: ${count}</span>`;
+                }).join(' ');
+                
+                row.innerHTML = `
+                    <td>${template.name}</td>
+                    <td><span class="badge ${categoryClass}">${template.category}</span></td>
+                    <td><span class="badge ${statusClass}">${template.status}</span></td>
+                    <td>${template.language}</td>
+                    <td>${componentBadges}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary test-template-btn" data-template-index="${templates.indexOf(template)}">
+                            <i class="bi bi-send"></i> Test
+                        </button>
+                    </td>
+                `;
+                
+                table.appendChild(row);
+            });
+            
+            // Attach event listeners
+            document.querySelectorAll('.test-template-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = this.dataset.templateIndex;
+                    openTestModal(templates[index]);
+                });
+            });
+        }
+        
+        // Open test template modal
+        function openTestModal(template) {
+            const modal = new bootstrap.Modal(document.getElementById('testTemplateModal'));
+            
+            // Set template info
+            document.getElementById('modal-template-name').textContent = template.name;
+            document.getElementById('test-template-name').value = template.name;
+            document.getElementById('test-template-language').value = template.language;
+            
+            // Clear and populate components
+            const componentsContainer = document.getElementById('test-template-components');
+            componentsContainer.innerHTML = '';
+            
+            // Parse components
+            const components = template.components || [];
+            
+            // Group components by type
+            const headerComponents = components.filter(comp => comp.type === 'HEADER');
+            const bodyComponents = components.filter(comp => comp.type === 'BODY');
+            const buttonComponents = components.filter(comp => comp.type === 'BUTTONS');
+            
+            // Add header component UI if needed
+            if (headerComponents.length > 0) {
+                const header = headerComponents[0];
+                const headerFormat = header.format || 'TEXT';
+                
+                const headerFieldset = document.createElement('fieldset');
+                
+                const legend = document.createElement('legend');
+                legend.textContent = 'Header';
+                headerFieldset.appendChild(legend);
+                
+                if (headerFormat === 'TEXT') {
+                    const div = document.createElement('div');
+                    div.className = 'mb-3';
+                    div.innerHTML = `
+                        <label for="header-text" class="form-label">Header Text</label>
+                        <input type="text" class="form-control" id="header-text" placeholder="Header text">
+                        <div class="form-text">Header text for the template</div>
+                    `;
+                    headerFieldset.appendChild(div);
+                } else if (headerFormat === 'IMAGE') {
+                    const div = document.createElement('div');
+                    div.className = 'mb-3';
+                    div.innerHTML = `
+                        <label for="header-media-id" class="form-label">Image Media ID</label>
+                        <input type="text" class="form-control" id="header-media-id" placeholder="Meta Media ID">
+                        <div class="form-text">Upload an image in the main app and use the media ID here</div>
+                    `;
+                    headerFieldset.appendChild(div);
+                }
+                
+                componentsContainer.appendChild(headerFieldset);
+            }
+            
+            // Add body component UI if needed
+            if (bodyComponents.length > 0) {
+                const body = bodyComponents[0];
+                const bodyText = body.text || '';
+                
+                // Extract placeholders like {{1}} from text - using string split to avoid regex issues
+                const placeholderMatches = [];
+                let parts = bodyText.split('{{');
+                
+                for (let i = 1; i < parts.length; i++) {
+                    const subParts = parts[i].split('}}');
+                    if (subParts.length > 1 && !isNaN(parseInt(subParts[0]))) {
+                        placeholderMatches.push(subParts[0]);
+                    }
+                }
+                
+                if (placeholderMatches.length > 0) {
+                    const bodyFieldset = document.createElement('fieldset');
+                    
+                    const legend = document.createElement('legend');
+                    legend.textContent = 'Body Parameters';
+                    bodyFieldset.appendChild(legend);
+                    
+                    placeholderMatches.forEach(index => {
+                        const div = document.createElement('div');
+                        div.className = 'mb-3';
+                        div.innerHTML = `
+                            <label for="body-param-${index}" class="form-label">Parameter ${index}</label>
+                            <input type="text" class="form-control" id="body-param-" + index data-param-type="body" data-param-index=" + index placeholder="Value for {{" + index + "}}">
+                        `;
+                        bodyFieldset.appendChild(div);
+                    });
+                    
+                    componentsContainer.appendChild(bodyFieldset);
+                }
+            }
+            
+            // Add button component UI if needed
+            if (buttonComponents.length > 0) {
+                const buttons = buttonComponents[0].buttons || [];
+                
+                if (buttons.length > 0) {
+                    const buttonFieldset = document.createElement('fieldset');
+                    
+                    const legend = document.createElement('legend');
+                    legend.textContent = 'Button Parameters';
+                    buttonFieldset.appendChild(legend);
+                    
+                    buttons.forEach((button, index) => {
+                        if (button.type === 'URL') {
+                            const div = document.createElement('div');
+                            div.className = 'mb-3';
+                            div.innerHTML = `
+                                <label for="button-url-${index}" class="form-label">Button URL (${button.text})</label>
+                                <input type="url" class="form-control" id="button-url-${index}" data-param-type="button" data-param-index="${index}" placeholder="https://example.com">
+                            `;
+                            buttonFieldset.appendChild(div);
+                        }
+                    });
+                    
+                    componentsContainer.appendChild(buttonFieldset);
+                }
+            }
+            
+            // Add template details
+            const detailsDiv = document.getElementById('test-template-details');
+            detailsDiv.innerHTML = `
+                <p><strong>Name:</strong> ${template.name}</p>
+                <p><strong>Language:</strong> ${template.language}</p>
+                <p><strong>Category:</strong> ${template.category}</p>
+                <p><strong>Status:</strong> ${template.status}</p>
+            `;
+            
+            // If no components were added, show a message
+            if (componentsContainer.children.length === 0) {
+                componentsContainer.innerHTML = `
+                    <div class="alert alert-info">
+                        This template has no customizable parameters.
+                    </div>
+                `;
+            }
+            
+            modal.show();
+        }
+        
+        // Send test template
+        function sendTestTemplate() {
+            const templateName = document.getElementById('test-template-name').value;
+            const language = document.getElementById('test-template-language').value;
+            const phone = document.getElementById('test-phone').value;
+            
+            if (!phone) {
+                showAlert('Please enter a phone number', 'warning');
+                return;
+            }
+            
+            // Collect template parameters
+            const components = [];
+            
+            // Get header parameter if any
+            const headerText = document.getElementById('header-text')?.value;
+            const headerMediaId = document.getElementById('header-media-id')?.value;
+            
+            if (headerText) {
+                components.push({
+                    type: "header",
+                    parameters: [
+                        {
+                            type: "text",
+                            text: headerText
+                        }
+                    ]
+                });
+            } else if (headerMediaId) {
+                components.push({
+                    type: "header",
+                    parameters: [
+                        {
+                            type: "image",
+                            image: {
+                                id: headerMediaId
+                            }
+                        }
+                    ]
+                });
+            }
+            
+            // Get body parameters
+            const bodyParams = document.querySelectorAll('[data-param-type="body"]');
+            if (bodyParams.length > 0) {
+                const parameters = [];
+                
+                bodyParams.forEach(input => {
+                    const value = input.value.trim();
+                    if (value) {
+                        parameters.push({
+                            type: "text",
+                            text: value
+                        });
+                    }
+                });
+                
+                if (parameters.length > 0) {
+                    components.push({
+                        type: "body",
+                        parameters: parameters
+                    });
+                }
+            }
+            
+            // Get button parameters
+            const buttonParams = document.querySelectorAll('[data-param-type="button"]');
+            if (buttonParams.length > 0) {
+                buttonParams.forEach(input => {
+                    const value = input.value.trim();
+                    if (value) {
+                        components.push({
+                            type: "button",
+                            sub_type: "url",
+                            index: input.dataset.paramIndex,
+                            parameters: [
+                                {
+                                    type: "text",
+                                    text: value
+                                }
+                            ]
+                        });
+                    }
+                });
+            }
+            
+            // Send the test template
+            fetch('/templates/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    phone: phone,
+                    template_data: {
+                        template_name: templateName,
+                        language: language,
+                        components: components
+                    }
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('testTemplateModal'));
+                modal.hide();
+                
+                if (data.status === 'success') {
+                    showAlert(data.message, 'success');
+                } else {
+                    showAlert(data.message || 'Failed to send test template', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error sending test template. Check console for details.', 'danger');
+            });
+        }
+        
+        // Filter templates based on search
+        function filterTemplates() {
+            const searchTerm = document.getElementById('search-templates').value.toLowerCase();
+            
+            if (!templatesData || !templatesData.data) {
+                return;
+            }
+            
+            const templates = templatesData.data;
+            const filteredTemplates = searchTerm ? 
+                templates.filter(template => 
+                    template.name.toLowerCase().includes(searchTerm) || 
+                    template.category.toLowerCase().includes(searchTerm)) : 
+                templates;
+                
+            renderGridView(filteredTemplates);
+            renderTableView(filteredTemplates);
+        }
+        
+        // Clear search
+        function clearSearch() {
+            document.getElementById('search-templates').value = '';
+            filterTemplates();
+        }
+        
+        // Copy WABA ID to clipboard
+        function copyWabaId() {
+            const wabaId = document.getElementById('waba-id').value;
+            navigator.clipboard.writeText(wabaId)
+                .then(() => {
+                    showAlert('WABA ID copied to clipboard!', 'success');
+                })
+                .catch(err => {
+                    console.error('Error copying text: ', err);
+                    showAlert('Failed to copy WABA ID', 'danger');
+                });
+        }
+        
+        // Copy JSON data to clipboard
+        function copyJsonData() {
+            const jsonContent = document.getElementById('json-content').textContent;
+            navigator.clipboard.writeText(jsonContent)
+                .then(() => {
+                    showAlert('JSON data copied to clipboard!', 'success');
+                })
+                .catch(err => {
+                    console.error('Error copying text: ', err);
+                    showAlert('Failed to copy JSON data', 'danger');
+                });
+        }
+        
+        // Show/hide loading indicator
+        function showLoading(show) {
+            document.getElementById('templates-loading').style.display = show ? 'block' : 'none';
+        }
+        
+        // Show/hide error message
+        function showError(show, message = '') {
+            const errorElement = document.getElementById('templates-error');
+            if (show) {
+                errorElement.classList.remove('d-none');
+                document.getElementById('error-message').textContent = message;
+            } else {
+                errorElement.classList.add('d-none');
+            }
+        }
+        
+        // Get status badge class
+        function getStatusClass(status) {
+            switch (status) {
+                case 'APPROVED': return 'bg-success';
+                case 'PENDING': return 'bg-warning text-dark';
+                case 'REJECTED': return 'bg-danger';
+                default: return 'bg-secondary';
+            }
+        }
+        
+        // Get category badge class
+        function getCategoryClass(category) {
+            switch (category) {
+                case 'MARKETING': return 'bg-primary';
+                case 'UTILITY': return 'bg-info text-dark';
+                case 'AUTHENTICATION': return 'bg-warning text-dark';
+                default: return 'bg-secondary';
+            }
+        }
+        
+        // Show alert message
+        function showAlert(message, type) {
+            const alertArea = document.getElementById('alert-area');
+            const alert = document.createElement('div');
+            
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            alertArea.appendChild(alert);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                bsAlert.close();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

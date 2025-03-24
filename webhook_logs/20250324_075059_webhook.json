@@ -1,0 +1,22 @@
+{
+  "entry": [
+    {
+      "id": "9388192334598443",
+      "time": 1742789966,
+      "changes": [
+        {
+          "value": {
+            "event": "ENDPOINT_AVAILABILITY",
+            "message": "Flow endpoint availability was below 90% threshold in the last 60 minutes. Users are unable to open or use the flow.",
+            "flow_id": "9040745556047596",
+            "availability": 0,
+            "threshold": 90,
+            "alert_state": "ACTIVATED"
+          },
+          "field": "flows"
+        }
+      ]
+    }
+  ],
+  "object": "whatsapp_business_account"
+}

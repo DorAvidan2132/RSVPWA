@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Webhook Console</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        pre {
+            background-color: #f5f5f5;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            overflow: auto;
+            max-height: 400px;
+        }
+        #log-container {
+            height: 300px;
+            overflow-y: auto;
+            background-color: #272822;
+            color: #f8f8f2;
+            padding: 10px;
+            font-family: monospace;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            word-wrap: break-word;
+        }
+        .log-info { color: #A6E22E; }
+        .log-success { color: #66D9EF; }
+        .log-error { color: #F92672; }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <h1 class="mb-4">WhatsApp Webhook Console</h1>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Webhook Verification</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="check-webhook" class="btn btn-primary">Check Webhook Configuration</button>
+                        <button id="update-subscription" class="btn btn-warning ms-2">Update Subscription</button>
+                        <div id="webhook-result" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Test Message</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <input type="tel" id="test-phone" class="form-control" placeholder="WhatsApp number (e.g., +1234567890)">
+                            <button id="send-test" class="btn btn-success">Send Test Message</button>
+                        </div>
+                        <div id="send-result" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Webhook Console Log</h5>
+                <button id="clear-log" class="btn btn-sm btn-outline-secondary">Clear Log</button>
+            </div>
+            <div class="card-body">
+                <div id="log-container"></div>
+                
+                <div class="d-grid gap-2">
+                    <button id="test-webhook" class="btn btn-primary">Simulate Webhook (Test Auto-Reply)</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Last Webhook Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="last-webhook-container">
+                            <p class="text-muted">No webhook data available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Send Custom Message</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="custom-phone" class="form-label">Recipient Phone Number</label>
+                            <input type="tel" id="custom-phone" class="form-control" placeholder="+1234567890">
+                        </div>
+                        <div class="mb-3">
+                            <label for="custom-message" class="form-label">Message Text</label>
+                            <textarea id="custom-message" class="form-control" rows="3"></textarea>
+                        </div>
+                        <button id="send-custom" class="btn btn-primary">Send Message</button>
+                        <div id="custom-result" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logContainer = document.getElementById('log-container');
+            
+            // Add log entry
+            function addLog(message, type = 'info') {
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry log-${type}`;
+                
+                const timestamp = new Date().toLocaleTimeString();
+                logEntry.textContent = `[${timestamp}] ${message}`;
+                
+                logContainer.appendChild(logEntry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+            
+            // Clear log
+            document.getElementById('clear-log').addEventListener('click', function() {
+                logContainer.innerHTML = '';
+                addLog('Log cleared');
+            });
+            
+            // Initialize
+            addLog('Console initialized');
+            
+            // Check webhook configuration
+            document.getElementById('check-webhook').addEventListener('click', function() {
+                addLog('Checking webhook configuration...');
+                
+                fetch('/webhook-verify')
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultElement = document.getElementById('webhook-result');
+                        
+                        if (data.status === 'success') {
+                            // Display webhook info
+                            let html = `<div class="alert alert-info">`;
+                            html += `<p><strong>Webhook URL:</strong> ${data.webhook_url}</p>`;
+                            html += `<p><strong>Webhook Status:</strong> ${data.webhook_status}</p>`;
+                            html += `<p><strong>Subscribed Fields:</strong></p>`;
+                            html += `<ul>`;
+                            
+                            if (data.subscribed_fields && data.subscribed_fields.length > 0) {
+                                data.subscribed_fields.forEach(subscription => {
+                                    html += `<li>${JSON.stringify(subscription)}</li>`;
+                                });
+                            } else {
+                                html += `<li>No subscriptions found</li>`;
+                            }
+                            
+                            html += `</ul>`;
+                            html += `</div>`;
+                            
+                            resultElement.innerHTML = html;
+                            addLog('Webhook configuration retrieved successfully', 'success');
+                        } else {
+                            resultElement.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                            addLog(`Error checking webhook: ${data.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById('webhook-result').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                        addLog(`Error checking webhook: ${error.message}`, 'error');
+                    });
+            });
+            
+            // Update webhook subscription
+            document.getElementById('update-subscription').addEventListener('click', function() {
+                addLog('Updating webhook subscription...');
+                
+                fetch('/update-webhook-subscription')
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultElement = document.getElementById('webhook-result');
+                        
+                        if (data.status === 'success') {
+                            resultElement.innerHTML = `<div class="alert alert-success">Subscription updated successfully!</div>`;
+                            addLog('Webhook subscription updated successfully', 'success');
+                        } else {
+                            resultElement.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                            addLog(`Error updating subscription: ${data.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById('webhook-result').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                        addLog(`Error updating subscription: ${error.message}`, 'error');
+                    });
+            });
+            
+            // Send test message
+            document.getElementById('send-test').addEventListener('click', function() {
+                const phone = document.getElementById('test-phone').value.trim();
+                
+                if (!phone) {
+                    document.getElementById('send-result').innerHTML = `<div class="alert alert-warning">Please enter a phone number</div>`;
+                    return;
+                }
+                
+                addLog(`Sending test message to ${phone}...`);
+                
+                fetch(`/test-send?phone=${encodeURIComponent(phone)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultElement = document.getElementById('send-result');
+                        
+                        if (data.status === 'success') {
+                            resultElement.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                            addLog(`Test message sent to ${phone}`, 'success');
+                        } else {
+                            resultElement.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                            addLog(`Error sending test message: ${data.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById('send-result').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                        addLog(`Error sending test message: ${error.message}`, 'error');
+                    });
+            });
+            
+            // Test webhook (simulate webhook)
+            document.getElementById('test-webhook').addEventListener('click', function() {
+                const phone = document.getElementById('test-phone').value.trim() || document.getElementById('custom-phone').value.trim();
+                
+                if (!phone) {
+                    addLog('Please enter a phone number in either test field', 'error');
+                    return;
+                }
+                
+                addLog(`Simulating webhook with phone ${phone}...`);
+                
+                fetch(`/test-webhook?phone=${encodeURIComponent(phone)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            addLog(`Webhook simulation completed: ${data.message}`, 'success');
+                            
+                            // Refresh last webhook data after a short delay
+                            setTimeout(fetchLastWebhook, 1000);
+                        } else {
+                            addLog(`Webhook simulation failed: ${data.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        addLog(`Webhook simulation error: ${error.message}`, 'error');
+                    });
+            });
+            
+            // Send custom message
+            document.getElementById('send-custom').addEventListener('click', function() {
+                const phone = document.getElementById('custom-phone').value.trim();
+                const message = document.getElementById('custom-message').value.trim();
+                
+                if (!phone || !message) {
+                    document.getElementById('custom-result').innerHTML = `<div class="alert alert-warning">Please enter both phone number and message</div>`;
+                    return;
+                }
+                
+                addLog(`Sending custom message to ${phone}...`);
+                
+                fetch('/send_message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message_text: message,
+                        selected_phones: [phone]
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const resultElement = document.getElementById('custom-result');
+                    
+                    if (data.success) {
+                        resultElement.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                        addLog(`Custom message sent to ${phone}`, 'success');
+                    } else {
+                        resultElement.innerHTML = `<div class="alert alert-danger">${data.message || 'Error sending message'}</div>`;
+                        addLog(`Error sending custom message: ${data.message || 'Unknown error'}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('custom-result').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                    addLog(`Error sending custom message: ${error.message}`, 'error');
+                });
+            });
+            
+            // Fetch last webhook data
+            function fetchLastWebhook() {
+                fetch('/webhook-diagnostic')
+                    .then(response => response.json())
+                    .then(data => {
+                        // If we have webhook data, fetch and display it
+                        if (data.webhook_file_exists) {
+                            return fetch('/webhook-logs')
+                                .then(response => response.text())
+                                .then(html => {
+                                    // Extract the last webhook JSON
+                                    const tempDiv = document.createElement('div');
+                                    tempDiv.innerHTML = html;
+                                    
+                                    const messageLog = tempDiv.querySelector('#message-logs');
+                                    if (messageLog) {
+                                        document.getElementById('last-webhook-container').innerHTML = messageLog.outerHTML;
+                                    } else {
+                                        // Try to find JSON data in the HTML
+                                        const preElements = tempDiv.querySelectorAll('pre');
+                                        if (preElements.length > 0) {
+                                            document.getElementById('last-webhook-container').innerHTML = preElements[0].outerHTML;
+                                        } else {
+                                            document.getElementById('last-webhook-container').innerHTML = 
+                                                `<p>Webhook file exists but couldn't extract data. Size: ${data.webhook_file_size} bytes</p>`;
+                                        }
+                                    }
+                                });
+                        } else {
+                            document.getElementById('last-webhook-container').innerHTML = 
+                                `<p class="text-muted">No webhook data available</p>`;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching webhook data:', error);
+                    });
+            }
+            
+            // Initial load of webhook data
+            fetchLastWebhook();
+        });
+    </script>
+</body>
+</html>

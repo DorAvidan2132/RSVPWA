@@ -1,0 +1,27 @@
+{
+  "entry": [
+    {
+      "id": "539741765897929",
+      "time": 1742666559,
+      "changes": [
+        {
+          "value": {
+            "message_template_id": 588465480908744,
+            "message_template_name": "rsvp_massage_visit_web",
+            "message_template_language": "en_US",
+            "message_template_element": "We are excited to invite you to celebrate the Wedding of *Celina and Dor* on *Sunday, 25.05.2025* in *Arugot Bossem*.\nThe reception will begin at 18:15 PM.\nWe can't wait to see you there!\n\nPlease let us know if you\u2019ll be able to join by completing the form by *15th May*.",
+            "message_template_buttons": [
+              {
+                "message_template_button_type": "URL",
+                "message_template_button_text": "Fill Out This Form",
+                "message_template_button_url": "https://celinador.wixsite.com/wedding/wedding-rsvp"
+              }
+            ]
+          },
+          "field": "message_template_components_update"
+        }
+      ]
+    }
+  ],
+  "object": "whatsapp_business_account"
+}
